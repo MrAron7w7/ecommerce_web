@@ -1,8 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { getProducts } from "@/actions/product/get-product";
 import {
   Select,
   SelectContent,
@@ -10,11 +8,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { getCategories } from "@/actions/category/get-vategory";
+import { Badge } from "@/components/ui/badge";
 
-export default async function Home() {
-  const products = await getProducts();
-  const categories = await getCategories();
+function HomePage() {
   return (
     <div className="min-h-screen bg-white">
       {/* Hero Section */}
@@ -57,11 +53,10 @@ export default async function Home() {
                     <SelectValue placeholder="Seleccionar categoría" />
                   </SelectTrigger>
                   <SelectContent>
-                    {categories.map((category) => (
-                      <SelectItem key={category.id} value={category.id}>
-                        {category.name}
-                      </SelectItem>
-                    ))}
+                    <SelectItem value="all">Todas</SelectItem>
+                    <SelectItem value="electronics">Electrónicos</SelectItem>
+                    <SelectItem value="clothing">Ropa</SelectItem>
+                    <SelectItem value="home">Hogar</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -75,25 +70,14 @@ export default async function Home() {
             <div className="md:w-3/4">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {/* Product Card Example */}
-                {products.map((product) => (
-                  <Card key={product.id} className="overflow-hidden">
-                    <div className="aspect-square bg-gray-200">
-                      <img
-                        className="w-full h-full object-fill"
-                        src={`${product.imageUrl}`}
-                        alt={product.name}
-                      />
-                    </div>
+                {[1, 2, 3, 4, 5, 6].map((item) => (
+                  <Card key={item} className="overflow-hidden">
+                    <div className="aspect-square bg-gray-200"></div>
                     <div className="p-4">
-                      <Badge className="mb-2">{product.category.name}</Badge>
-                      <h3 className="font-semibold mb-2">{product.name}</h3>
-                      <p className="text-gray-600 mb-2">${product.price}</p>
-                      <div className="flex flex-col space-y-2">
-                        <Button className="w-full">Agregar al Carrito</Button>
-                        <Button className="w-full" variant={"outline"}>
-                          Detalles
-                        </Button>
-                      </div>
+                      <Badge className="mb-2">Nuevo</Badge>
+                      <h3 className="font-semibold mb-2">Producto {item}</h3>
+                      <p className="text-gray-600 mb-2">$99.99</p>
+                      <Button className="w-full">Agregar al Carrito</Button>
                     </div>
                   </Card>
                 ))}
@@ -105,3 +89,5 @@ export default async function Home() {
     </div>
   );
 }
+
+export default HomePage;
