@@ -10,7 +10,7 @@ export interface User {
 export interface Category {
     id: string
     name: string
-    description?: string
+    description?: string | null
     status: boolean
     createdAt: string
     updatedAt: string
@@ -20,7 +20,7 @@ export interface Category {
 export interface Product {
     id: string
     name: string
-    description?: string
+    description?: string | null
     price: number
     stock: number
     imageUrl?: string   

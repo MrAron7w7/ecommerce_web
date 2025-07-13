@@ -11,6 +11,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { getCategories } from "@/actions/category/get-vategory";
+import Link from "next/link";
 
 export default async function Home() {
   const products = await getProducts();
@@ -90,8 +91,8 @@ export default async function Home() {
                       <p className="text-gray-600 mb-2">${product.price}</p>
                       <div className="flex flex-col space-y-2">
                         <Button className="w-full">Agregar al Carrito</Button>
-                        <Button className="w-full" variant={"outline"}>
-                          Detalles
+                        <Button className="w-full" variant={"outline"} asChild>
+                          <Link href={`/products/${product.id}`}>Detalles</Link>
                         </Button>
                       </div>
                     </div>

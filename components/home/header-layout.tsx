@@ -83,7 +83,7 @@ function HeaderLayout() {
             <Tooltip>
               <TooltipTrigger>
                 <Button variant="outline" size="icon" asChild>
-                  <Link href={"/dashboard"}>
+                  <Link href={"/dashboard/products"}>
                     <LayoutDashboard className="h-5 w-5" />
                   </Link>
                 </Button>
