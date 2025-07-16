@@ -2,14 +2,10 @@
 
 import { prisma } from "@/lib/prisma";
 import categorySchema from "@/schemas/category.schema";
+import CategoryResponse from "@/types/category-response";
 import z from "zod";
 
-type CategoryResponse = {
-  success: boolean;
-  message: string;
-  error?: string;
-  status: "success" | "error";
-};
+
 
 export async function saveCategory(
   formData: z.infer<typeof categorySchema>
@@ -20,17 +16,17 @@ export async function saveCategory(
     return {
       success: false,
       message: "Validation failed",
-      error: result.error.message,
       status: "error",
     };
   }
 
-  const { name, description } = result.data;
+  const { name, description, status } = result.data;
 
   await prisma.category.create({
     data: {
-      name: name,
-      description: description,
+      name,
+      description,
+      status,
     },
   });
 

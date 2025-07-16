@@ -18,7 +18,7 @@ model User {
   id        String   @id @default(cuid())
   name      String
   email     String   @unique
-  role      String   @default("user")
+  role      UserRole @default(USER)
   password  String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -82,4 +82,9 @@ enum OrderStatus {
   PROCESSING
   COMPLETED
   CANCELLED
+}
+
+enum UserRole {
+  USER
+  ADMIN
 }

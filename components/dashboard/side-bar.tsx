@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Package, Layers } from "lucide-react";
+import { Package, Layers, Users, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
@@ -28,16 +28,16 @@ export function Sidebar() {
     //   icon: ShoppingCart,
     //   href: "/dashboard/orders",
     // },
-    // {
-    //   label: "Clientes",
-    //   icon: Users,
-    //   href: "/dashboard/customers",
-    // },
-    // {
-    //   label: "Configuración",
-    //   icon: Settings,
-    //   href: "/dashboard/settings",
-    // },
+    {
+      label: "Clientes",
+      icon: Users,
+      href: "/dashboard/customers",
+    },
+    {
+      label: "Regresar",
+      icon: ArrowLeft,
+      href: "/",
+    },
   ];
 
   const pathname = usePathname();

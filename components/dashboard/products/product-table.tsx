@@ -40,7 +40,6 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Switch } from "@/components/ui/switch";
 import { Product } from "@/types/types";
 
 interface ProductsTableProps {
@@ -128,7 +127,6 @@ export const columns: ColumnDef<Product>[] = [
       const status = row.original.status;
       return (
         <div className="flex items-center space-x-2">
-          <Switch checked={status} />
           <Badge className={status ? "bg-green-500" : "bg-red-500"}>
             {status ? "Activo" : "Inactivo"}
           </Badge>

@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import { Roboto } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "sonner";
-import ClientLayout from "@/components/home/client-layout";
+import HeaderLayout from "@/components/home/header-layout";
+import FooterLayout from "@/components/home/footer-layout";
 
 const roboto = Roboto({
   variable: "--font-roboto",
@@ -23,13 +24,13 @@ export default function RootLayout({
     <html lang="en">
       <head>
         {/* Cambiar icono de la app */}
-        <link rel="icon" href="./logo.jpg" />
+        <link rel="icon" href={"./logo.jpg"} />
       </head>
       <body className={` ${roboto.variable} antialiased`}>
-        <ClientLayout>
-          <main>{children}</main>
-          <Toaster />
-        </ClientLayout>
+        <HeaderLayout />
+        <main>{children}</main>
+        <Toaster />
+        <FooterLayout />
       </body>
     </html>
   );

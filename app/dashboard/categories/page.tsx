@@ -1,23 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
-import {
-  ColumnDef,
-  ColumnFiltersState,
-  flexRender,
-  getCoreRowModel,
-  getFilteredRowModel,
-  getPaginationRowModel,
-  getSortedRowModel,
-  SortingState,
-  useReactTable,
-  VisibilityState,
-} from "@tanstack/react-table";
-import { ArrowUpDown, ChevronDown, MoreHorizontal } from "lucide-react";
+import { MoreHorizontal, ChevronLeft, ChevronRight } from "lucide-react";
 
 import {
   Form,
@@ -30,19 +18,12 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { saveCategory } from "@/actions/category/save-category";
-import { getCategories } from "@/actions/category/get-vategory";
-import { Category } from "@/types/types";
-import categorySchema from "@/schemas/category.schema";
 import { Switch } from "@/components/ui/switch";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
   DropdownMenu,
-  DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
@@ -54,334 +35,281 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
-export const columns: ColumnDef<Category>[] = [
-  {
-    id: "select",
-    header: ({ table }) => (
-      <Checkbox
-        checked={
-          table.getIsAllPageRowsSelected() ||
-          (table.getIsSomePageRowsSelected() && "indeterminate")
-        }
-        onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-        aria-label="Select all"
-      />
-    ),
-    cell: ({ row }) => (
-      <Checkbox
-        checked={row.getIsSelected()}
-        onCheckedChange={(value) => row.toggleSelected(!!value)}
-        aria-label="Select row"
-      />
-    ),
-    enableSorting: false,
-    enableHiding: false,
-  },
-  {
-    accessorKey: "name",
-    header: ({ column }) => {
-      return (
-        <Button
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-        >
-          Nombre
-          <ArrowUpDown className="ml-2 h-4 w-4" />
-        </Button>
-      );
-    },
-    cell: ({ row }) => (
-      <div className="font-medium">{row.getValue("name")}</div>
-    ),
-  },
-  {
-    accessorKey: "description",
-    header: "Descripción",
-    cell: ({ row }) => (
-      <div className="text-slate-600">
-        {row.getValue("description") || "Sin descripción"}
-      </div>
-    ),
-  },
-  {
-    accessorKey: "status",
-    header: "Estado",
-    cell: ({ row }) => {
-      const status = row.getValue("status");
+import categorySchema from "@/schemas/category.schema";
+import { saveCategory } from "@/actions/category/save-category";
+import { Category } from "@/types/types";
+import { getCategories } from "@/actions/category/get-category";
+import { updateCategory } from "@/actions/category/update-category";
+import { deleteCategory } from "@/actions/category/delete-category";
+import DeleteCategoryDialog from "@/components/dashboard/categories/delete-category-dialog";
+import { EditCategoryDialog } from "@/components/dashboard/categories/edit-category-dialog";
 
-      return (
-        <div className="flex items-center gap-2">
-          {status ? (
-            <>
-              <span className="text-green-600 font-medium">Activa</span>
-              <Switch
-                checked={status as boolean}
-                onCheckedChange={() => {}}
-                className="data-[state=checked]:bg-green-600"
-              />
-            </>
-          ) : (
-            <span className="text-slate-500">Inactiva</span>
-          )}
-        </div>
-      );
-    },
-  },
-  {
-    id: "actions",
-    enableHiding: false,
-    cell: ({ row }) => {
-      const category = row.original;
+import { useRouter, useSearchParams } from "next/navigation";
 
-      return (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="h-8 w-8 p-0">
-              <span className="sr-only">Abrir menú</span>
-              <MoreHorizontal className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuLabel>Acciones</DropdownMenuLabel>
-            <DropdownMenuItem
-              onClick={() => navigator.clipboard.writeText(category.id)}
-            >
-              Copiar ID de categoría
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem>Editar categoría</DropdownMenuItem>
-            <DropdownMenuItem>Cambiar estado</DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      );
-    },
-  },
-];
+interface CategoriesPageProps {
+  initialCategories: Category[];
+}
 
-export default function CategoriesPage() {
+export default function CategoriesPage({
+  initialCategories,
+}: CategoriesPageProps) {
   const form = useForm<z.infer<typeof categorySchema>>({
     resolver: zodResolver(categorySchema),
     defaultValues: {
       name: "",
       description: "",
+      status: true,
     },
   });
 
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [sorting, setSorting] = useState<SortingState>([]);
-  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
-  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
-  const [rowSelection, setRowSelection] = useState({});
+  const [categories, setCategories] = useState<Category[]>(initialCategories);
+  const [editData, setEditData] = useState<Category | null>(null);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [openEdit, setOpenEdit] = useState(false);
+  const [openDelete, setOpenDelete] = useState(false);
+  const [filter, setFilter] = useState("");
 
-  const table = useReactTable({
-    data: categories,
-    columns,
-    onSortingChange: setSorting,
-    onColumnFiltersChange: setColumnFilters,
-    getCoreRowModel: getCoreRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
-    onColumnVisibilityChange: setColumnVisibility,
-    onRowSelectionChange: setRowSelection,
-    state: {
-      sorting,
-      columnFilters,
-      columnVisibility,
-      rowSelection,
-    },
-  });
+  const searchParams = useSearchParams();
+  const router = useRouter();
+
+  const categoriesPerPage = 5;
+  const getPageFromUrl = () => {
+    const page = parseInt(searchParams.get("page") || "1", 10);
+    return isNaN(page) || page < 1 ? 1 : page;
+  };
+  const [currentPage, setCurrentPage] = useState(getPageFromUrl());
 
   useEffect(() => {
-    const fetchCategories = async () => {
-      const data = await getCategories();
-      setCategories(data);
-    };
-    fetchCategories();
-  }, []);
+    const page = getPageFromUrl();
+    setCurrentPage(page);
+  }, [searchParams]);
+
+  const handlePageChange = (page: number) => {
+    router.push(`?page=${page}`);
+  };
+
+  const filteredCategories = categories.filter((category) =>
+    category.name.toLowerCase().includes(filter.toLowerCase())
+  );
+
+  const totalPages = Math.ceil(filteredCategories.length / categoriesPerPage);
+  const indexOfLast = currentPage * categoriesPerPage;
+  const indexOfFirst = indexOfLast - categoriesPerPage;
+  const currentCategories = filteredCategories.slice(indexOfFirst, indexOfLast);
 
   const onSubmit = async (values: z.infer<typeof categorySchema>) => {
-    try {
-      const result = await saveCategory(values);
-
-      if (result.success) {
-        toast.success("Categoría creada exitosamente");
-        form.reset();
-        const updated = await getCategories();
-        setCategories(updated);
-      } else {
-        toast.error("Error al crear la categoría");
-      }
-    } catch (error) {
-      toast.error("Ocurrió un error inesperado");
-      console.error(error);
+    const result = await saveCategory(values);
+    if (result.success) {
+      toast.success("Categoría creada exitosamente");
+      form.reset();
+      const updated = await getCategories();
+      setCategories(updated);
+      router.push("?page=1"); // resetear a página 1
+    } else {
+      toast.error(result.message);
     }
   };
 
   return (
     <div className="max-w-4xl mx-auto p-6 bg-white rounded-xl shadow-lg border mt-10 space-y-10">
-      <div>
-        <h1 className="text-2xl font-bold mb-6">Agregar Nueva Categoría</h1>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Nombre*</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Ej: Calzado, Electrónica" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+      <h1 className="text-2xl font-bold mb-6">Agregar Nueva Categoría</h1>
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          <FormField
+            name="name"
+            control={form.control}
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Nombre*</FormLabel>
+                <FormControl>
+                  <Input {...field} placeholder="Ej: Electrónica" />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            name="description"
+            control={form.control}
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Descripción</FormLabel>
+                <FormControl>
+                  <Textarea
+                    {...field}
+                    placeholder="Descripción de la categoría"
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            name="status"
+            control={form.control}
+            render={({ field }) => (
+              <FormItem className="flex items-center gap-4">
+                <FormLabel>Estado</FormLabel>
+                <FormControl>
+                  <Switch
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                  />
+                </FormControl>
+              </FormItem>
+            )}
+          />
+          <Button type="submit" className="w-full">
+            Guardar Categoría
+          </Button>
+        </form>
+      </Form>
 
-            <FormField
-              control={form.control}
-              name="description"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Descripción</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      placeholder="Breve descripción de la categoría"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <Button type="submit" className="w-full">
-              Guardar Categoría
-            </Button>
-          </form>
-        </Form>
-      </div>
-
-      {/* CATEGORIAS TABLE */}
+      {/* Tabla de Categorías */}
       <div>
         <h2 className="text-xl font-semibold mb-4">Categorías Existentes</h2>
-        <div className="w-full">
-          <div className="flex items-center py-4">
-            <Input
-              placeholder="Filtrar por nombre..."
-              value={
-                (table.getColumn("name")?.getFilterValue() as string) ?? ""
-              }
-              onChange={(event) =>
-                table.getColumn("name")?.setFilterValue(event.target.value)
-              }
-              className="max-w-sm"
-            />
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="ml-auto">
-                  Columnas <ChevronDown className="ml-2 h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                {table
-                  .getAllColumns()
-                  .filter((column) => column.getCanHide())
-                  .map((column) => {
-                    return (
-                      <DropdownMenuCheckboxItem
-                        key={column.id}
-                        className="capitalize"
-                        checked={column.getIsVisible()}
-                        onCheckedChange={(value) =>
-                          column.toggleVisibility(!!value)
+        <div className="flex items-center py-4">
+          <Input
+            placeholder="Filtrar por nombre..."
+            value={filter}
+            onChange={(e) => {
+              setFilter(e.target.value);
+              handlePageChange(1); // resetear a página 1 si hay filtro
+            }}
+            className="max-w-sm"
+          />
+        </div>
+        <div className="rounded-md border">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Nombre</TableHead>
+                <TableHead>Descripción</TableHead>
+                <TableHead>Estado</TableHead>
+                <TableHead>Acciones</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {currentCategories.length ? (
+                currentCategories.map((category) => (
+                  <TableRow key={category.id}>
+                    <TableCell className="font-medium">
+                      {category.name}
+                    </TableCell>
+                    <TableCell className="text-slate-600">
+                      {category.description || "Sin descripción"}
+                    </TableCell>
+                    <TableCell>
+                      <span
+                        className={
+                          category.status
+                            ? "text-green-600 font-medium"
+                            : "text-slate-500"
                         }
                       >
-                        {column.id === "name" && "Nombre"}
-                        {column.id === "description" && "Descripción"}
-                        {column.id === "status" && "Estado"}
-                      </DropdownMenuCheckboxItem>
-                    );
-                  })}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-          <div className="rounded-md border">
-            <Table>
-              <TableHeader>
-                {table.getHeaderGroups().map((headerGroup) => (
-                  <TableRow key={headerGroup.id}>
-                    {headerGroup.headers.map((header) => {
-                      return (
-                        <TableHead key={header.id}>
-                          {header.isPlaceholder
-                            ? null
-                            : flexRender(
-                                header.column.columnDef.header,
-                                header.getContext()
-                              )}
-                        </TableHead>
-                      );
-                    })}
-                  </TableRow>
-                ))}
-              </TableHeader>
-              <TableBody>
-                {table.getRowModel().rows?.length ? (
-                  table.getRowModel().rows.map((row) => (
-                    <TableRow
-                      key={row.id}
-                      data-state={row.getIsSelected() && "selected"}
-                    >
-                      {row.getVisibleCells().map((cell) => (
-                        <TableCell key={cell.id}>
-                          {flexRender(
-                            cell.column.columnDef.cell,
-                            cell.getContext()
-                          )}
-                        </TableCell>
-                      ))}
-                    </TableRow>
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell
-                      colSpan={columns.length}
-                      className="h-24 text-center"
-                    >
-                      No hay categorías registradas.
+                        {category.status ? "Activa" : "Inactiva"}
+                      </span>
+                    </TableCell>
+                    <TableCell>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" className="h-8 w-8 p-0">
+                            <span className="sr-only">Abrir menú</span>
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuLabel>Acciones</DropdownMenuLabel>
+                          <DropdownMenuItem
+                            onClick={() => {
+                              setEditData(category);
+                              setOpenEdit(true);
+                            }}
+                          >
+                            Editar categoría
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => {
+                              setDeleteId(category.id);
+                              setOpenDelete(true);
+                            }}
+                          >
+                            Eliminar categoría
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </TableCell>
                   </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </div>
-          <div className="flex items-center justify-end space-x-2 py-4">
-            <div className="text-muted-foreground flex-1 text-sm">
-              {table.getFilteredSelectedRowModel().rows.length} de{" "}
-              {table.getFilteredRowModel().rows.length} fila(s) seleccionada(s).
-            </div>
-            <div className="space-x-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => table.previousPage()}
-                disabled={!table.getCanPreviousPage()}
-              >
-                Anterior
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => table.nextPage()}
-                disabled={!table.getCanNextPage()}
-              >
-                Siguiente
-              </Button>
-            </div>
-          </div>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={4} className="text-center py-6">
+                    No hay categorías registradas.
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
         </div>
+
+        {/* Paginación */}
+        {totalPages > 1 && (
+          <div className="flex items-center justify-between mt-4">
+            <div className="text-sm text-muted-foreground">
+              Página {currentPage} de {totalPages}
+            </div>
+            <div className="flex items-center space-x-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handlePageChange(currentPage - 1)}
+                disabled={currentPage === 1}
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map(
+                (number) => (
+                  <Button
+                    key={number}
+                    variant={currentPage === number ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => handlePageChange(number)}
+                  >
+                    {number}
+                  </Button>
+                )
+              )}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={currentPage === totalPages}
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
+
+      {/* Diálogos */}
+      <EditCategoryDialog
+        openEdit={openEdit}
+        setOpenEdit={setOpenEdit}
+        editData={editData}
+        form={form}
+        getCategories={getCategories}
+        setCategories={setCategories}
+        updateCategory={updateCategory}
+      />
+      <DeleteCategoryDialog
+        openDelete={openDelete}
+        setOpenDelete={setOpenDelete}
+        deleteId={deleteId}
+        getCategories={getCategories}
+        setCategories={setCategories}
+        deleteCategory={deleteCategory}
+      />
     </div>
   );
 }

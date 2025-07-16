@@ -1,7 +1,11 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
+import { useEffect, useState } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
+
 import { Button } from "@/components/ui/button";
-import { Plus, Package } from "lucide-react";
+import { Plus, Package, ChevronLeft, ChevronRight } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -9,7 +13,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { useState } from "react";
+
 import { ProductsTable } from "@/components/dashboard/products/product-table";
 import { Product } from "@/types/types";
 import { ProductForm } from "@/components/dashboard/products/product-form";
@@ -26,6 +30,32 @@ function ProductsPage({ products }: InitialValues) {
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
   const [action, setAction] = useState<"create" | "edit">("create");
+
+  const searchParams = useSearchParams();
+  const router = useRouter();
+
+  const productsPerPage = 5;
+
+  const getPageFromUrl = () => {
+    const page = parseInt(searchParams.get("page") || "1", 10);
+    return isNaN(page) || page < 1 ? 1 : page;
+  };
+
+  const [currentPage, setCurrentPage] = useState(getPageFromUrl());
+
+  useEffect(() => {
+    const page = getPageFromUrl();
+    setCurrentPage(page);
+  }, [searchParams]);
+
+  const handlePageChange = (page: number) => {
+    router.push(`?page=${page}`);
+  };
+
+  const totalPages = Math.ceil(products.length / productsPerPage);
+  const indexOfLast = currentPage * productsPerPage;
+  const indexOfFirst = indexOfLast - productsPerPage;
+  const currentProducts = products.slice(indexOfFirst, indexOfLast);
 
   const handleViewProduct = (product: Product) => {
     setSelectedProduct(product);
@@ -84,20 +114,58 @@ function ProductsPage({ products }: InitialValues) {
 
         {/* Products Table */}
         <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-white/20 shadow-xl overflow-hidden">
-          <div className="p-6 border-b border-slate-200">
+          <div className="p-6 border-b border-slate-200 flex justify-between items-center">
             <h2 className="text-xl font-semibold text-slate-800">
               Lista de Productos
             </h2>
+            <div className="text-sm text-muted-foreground">
+              Página {currentPage} de {totalPages}
+            </div>
           </div>
+
           <ProductsTable
-            products={products}
+            products={currentProducts}
             onView={handleViewProduct}
             onEdit={handleEditProduct}
             onDelete={handleDeleteProduct}
           />
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex justify-end items-center gap-2 p-4 border-t border-slate-200">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handlePageChange(currentPage - 1)}
+                disabled={currentPage === 1}
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map(
+                (number) => (
+                  <Button
+                    key={number}
+                    variant={currentPage === number ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => handlePageChange(number)}
+                  >
+                    {number}
+                  </Button>
+                )
+              )}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={currentPage === totalPages}
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+          )}
         </div>
 
-        {/* Modal para crear/editar producto */}
+        {/* Crear / Editar Producto */}
         <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
           <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto bg-white/95 backdrop-blur-sm border border-white/20">
             <DialogHeader className="pb-6">
@@ -128,7 +196,7 @@ function ProductsPage({ products }: InitialValues) {
           </DialogContent>
         </Dialog>
 
-        {/* Modal para ver detalles */}
+        {/* Ver Detalles del Producto */}
         <Dialog open={isViewOpen} onOpenChange={setIsViewOpen}>
           <DialogContent className="sm:max-w-3xl bg-white/95 backdrop-blur-sm border border-white/20">
             <DialogHeader className="pb-6">
@@ -152,7 +220,7 @@ function ProductsPage({ products }: InitialValues) {
           </DialogContent>
         </Dialog>
 
-        {/* Modal para eliminar */}
+        {/* Eliminar Producto */}
         <Dialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
           <DialogContent className="sm:max-w-md bg-white/95 backdrop-blur-sm border border-white/20">
             <DialogHeader className="pb-6">

@@ -11,12 +11,10 @@ const productSchema = z.object({
     message: "Debes seleccionar una categoría",
   }),
   status: z.boolean(),
-  image: z
-    .any()
-    .refine((file) => file instanceof File || file === null, {
-      message: "Debe ser un archivo válido",
-    })
-    .nullable(),
+   image: z.union([
+    z.instanceof(File).nullable(),
+    z.string().nullable() // Acepta URLs de imágenes existentes
+  ]).optional(),
 });
 
 export default productSchema;
