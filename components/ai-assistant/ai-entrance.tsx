@@ -7,21 +7,17 @@ import { Dialog, DialogContent } from "../ui/dialog";
 
 export function AiEntrance() {
   const [showEntrance, setShowEntrance] = useState(true);
-  const [showAssistant, setShowAssistant] = useState(false);
-  const [hasShown, setHasShown] = useState(false);
 
   useEffect(() => {
     // Solo mostrar una vez por sesión
     const shown = sessionStorage.getItem("aiEntranceShown");
     if (shown) {
       setShowEntrance(false);
-      setShowAssistant(true);
       return;
     }
 
     const timer = setTimeout(() => {
       setShowEntrance(false);
-      setShowAssistant(true);
       sessionStorage.setItem("aiEntranceShown", "true");
     }, 4000);
 
@@ -70,7 +66,13 @@ export function AiEntrance() {
         )}
       </AnimatePresence>
 
-      {/* Transición al asistente */}
+      {/* Opciones para el AiAssistant */}
+      {/*
+        Si necesitas mostrar el AiAssistant después:
+        1. Importa el componente: import { AiAssistant } from "./ai-assistant";
+        2. Descomenta este bloque
+        3. Asegúrate de manejar el estado adecuadamente
+
       <AnimatePresence>
         {!showEntrance && (
           <motion.div
@@ -82,6 +84,7 @@ export function AiEntrance() {
           </motion.div>
         )}
       </AnimatePresence>
+      */}
     </>
   );
 }

@@ -16,8 +16,8 @@ import {
   DropdownMenuTrigger,
 } from "../ui/dropdown-menu";
 import SignOutButton from "./signout-button";
-import { useFavorites } from "@/app/favorites/page";
 import { useCart } from "@/store/cart-store";
+import { useFavorites } from "@/store/favorites-store";
 
 interface NavLinkProps {
   session: Session | null;

@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 // import Image from "next/image";
 import { Badge } from "@/components/ui/badge";
 import { Product } from "@/types/types";
+import Image from "next/image";
 
 interface ProductDetailsProps {
   product: Product;
@@ -15,10 +16,10 @@ export function ProductDetails({ product, onClose }: ProductDetailsProps) {
         <div className="w-full md:w-1/3">
           <div className="relative aspect-square rounded-lg overflow-hidden border">
             {product.imageUrl ? (
-              <img
+              <Image
                 src={product.imageUrl}
                 alt={product.name}
-                // fill
+                fill
                 className="w-full h-full object-cover"
               />
             ) : (

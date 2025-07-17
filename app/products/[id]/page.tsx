@@ -1,4 +1,5 @@
-// src/app/products/[id]/page.tsx
+// app/products/[id]/page.tsx
+import type { Metadata } from "next";
 import { findProduct } from "@/actions/product/find-product";
 import { getProducts } from "@/actions/product/get-product";
 import { Button } from "@/components/ui/button";
@@ -22,11 +23,22 @@ import { Badge } from "@/components/ui/badge";
 import Image from "next/image";
 
 interface ProductPageProps {
-  params: { id: string };
+  params: Promise<{
+    id: string;
+  }>;
 }
 
-export default async function ProductPage({ params }: ProductPageProps) {
-  const product = await findProduct(params.id);
+export async function generateMetadata({
+  params,
+}: ProductPageProps): Promise<Metadata> {
+  return {
+    title: `Detalles del Producto ${(await params).id}`,
+    description: "Página de detalles del producto",
+  };
+}
+
+export default async function Page({ params }: ProductPageProps) {
+  const product = await findProduct((await params).id);
 
   if (!product) {
     return (

@@ -6,7 +6,9 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
 import { MoreHorizontal, ChevronLeft, ChevronRight } from "lucide-react";
+import { useRouter } from "next/navigation";
 
+// UI Components
 import {
   Form,
   FormControl,
@@ -35,24 +37,27 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
+// Schemas and Types
 import categorySchema from "@/schemas/category.schema";
-import { saveCategory } from "@/actions/category/save-category";
 import { Category } from "@/types/types";
-import { getCategories } from "@/actions/category/get-category";
-import { updateCategory } from "@/actions/category/update-category";
-import { deleteCategory } from "@/actions/category/delete-category";
+
+// Components
 import DeleteCategoryDialog from "@/components/dashboard/categories/delete-category-dialog";
 import { EditCategoryDialog } from "@/components/dashboard/categories/edit-category-dialog";
 
-import { useRouter, useSearchParams } from "next/navigation";
+// Hooks
+import { usePagination } from "@/hooks/usePagination";
+import { getCategories } from "@/actions/category/get-category";
+import { saveCategory } from "@/actions/category/save-category";
+import { updateCategory } from "@/actions/category/update-category";
+import { deleteCategory } from "@/actions/category/delete-category";
 
-interface CategoriesPageProps {
-  initialCategories: Category[];
-}
+export default function CategoriesPage() {
+  const router = useRouter();
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-export default function CategoriesPage({
-  initialCategories,
-}: CategoriesPageProps) {
+  // Form setup
   const form = useForm<z.infer<typeof categorySchema>>({
     resolver: zodResolver(categorySchema),
     defaultValues: {
@@ -62,111 +67,147 @@ export default function CategoriesPage({
     },
   });
 
-  const [categories, setCategories] = useState<Category[]>(initialCategories);
+  // State management
+  const [categories, setCategories] = useState<Category[]>([]);
   const [editData, setEditData] = useState<Category | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [openEdit, setOpenEdit] = useState(false);
   const [openDelete, setOpenDelete] = useState(false);
   const [filter, setFilter] = useState("");
 
-  const searchParams = useSearchParams();
-  const router = useRouter();
-
+  // Pagination
   const categoriesPerPage = 5;
-  const getPageFromUrl = () => {
-    const page = parseInt(searchParams.get("page") || "1", 10);
-    return isNaN(page) || page < 1 ? 1 : page;
-  };
-  const [currentPage, setCurrentPage] = useState(getPageFromUrl());
+  const { currentPage, handlePageChange, calculatePagination } =
+    usePagination(categoriesPerPage);
 
+  // Load categories on mount
   useEffect(() => {
-    const page = getPageFromUrl();
-    setCurrentPage(page);
-  }, [searchParams]);
+    const loadCategories = async () => {
+      try {
+        setIsLoading(true);
+        const data = await getCategories();
+        setCategories(data);
+        setError(null);
+      } catch (err) {
+        console.error("Failed to load categories:", err);
+        setError("No se pudieron cargar las categorías");
+        toast.error("Error al cargar las categorías");
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
-  const handlePageChange = (page: number) => {
-    router.push(`?page=${page}`);
-  };
+    loadCategories();
+  }, []);
 
+  // Filter and paginate categories
   const filteredCategories = categories.filter((category) =>
     category.name.toLowerCase().includes(filter.toLowerCase())
   );
 
-  const totalPages = Math.ceil(filteredCategories.length / categoriesPerPage);
-  const indexOfLast = currentPage * categoriesPerPage;
-  const indexOfFirst = indexOfLast - categoriesPerPage;
+  const { totalPages, indexOfFirst, indexOfLast } = calculatePagination(
+    filteredCategories.length
+  );
   const currentCategories = filteredCategories.slice(indexOfFirst, indexOfLast);
 
+  // Form submission handler
   const onSubmit = async (values: z.infer<typeof categorySchema>) => {
-    const result = await saveCategory(values);
-    if (result.success) {
-      toast.success("Categoría creada exitosamente");
-      form.reset();
-      const updated = await getCategories();
-      setCategories(updated);
-      router.push("?page=1"); // resetear a página 1
-    } else {
-      toast.error(result.message);
+    try {
+      const result = await saveCategory(values);
+      if (result.success) {
+        toast.success("Categoría creada exitosamente");
+        form.reset();
+        const updated = await getCategories();
+        setCategories(updated);
+        router.push("?page=1");
+      } else {
+        toast.error(result.message);
+      }
+    } catch (err) {
+      console.error("Failed to save category:", err);
+      toast.error("Error al guardar la categoría");
     }
   };
 
+  if (isLoading) {
+    return (
+      <div className="max-w-4xl mx-auto p-6 bg-white rounded-xl shadow-lg border mt-10 flex justify-center">
+        <p>Cargando categorías...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="max-w-4xl mx-auto p-6 bg-white rounded-xl shadow-lg border mt-10">
+        <div className="text-red-500">{error}</div>
+        <Button onClick={() => window.location.reload()} className="mt-4">
+          Reintentar
+        </Button>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-4xl mx-auto p-6 bg-white rounded-xl shadow-lg border mt-10 space-y-10">
-      <h1 className="text-2xl font-bold mb-6">Agregar Nueva Categoría</h1>
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-          <FormField
-            name="name"
-            control={form.control}
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Nombre*</FormLabel>
-                <FormControl>
-                  <Input {...field} placeholder="Ej: Electrónica" />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            name="description"
-            control={form.control}
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Descripción</FormLabel>
-                <FormControl>
-                  <Textarea
-                    {...field}
-                    placeholder="Descripción de la categoría"
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            name="status"
-            control={form.control}
-            render={({ field }) => (
-              <FormItem className="flex items-center gap-4">
-                <FormLabel>Estado</FormLabel>
-                <FormControl>
-                  <Switch
-                    checked={field.value}
-                    onCheckedChange={field.onChange}
-                  />
-                </FormControl>
-              </FormItem>
-            )}
-          />
-          <Button type="submit" className="w-full">
-            Guardar Categoría
-          </Button>
-        </form>
-      </Form>
+      {/* Formulario de categoría */}
+      <section>
+        <h1 className="text-2xl font-bold mb-6">Agregar Nueva Categoría</h1>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <FormField
+              name="name"
+              control={form.control}
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Nombre*</FormLabel>
+                  <FormControl>
+                    <Input {...field} placeholder="Ej: Electrónica" />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              name="description"
+              control={form.control}
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Descripción</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      {...field}
+                      placeholder="Descripción de la categoría"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              name="status"
+              control={form.control}
+              render={({ field }) => (
+                <FormItem className="flex items-center gap-4">
+                  <FormLabel>Estado</FormLabel>
+                  <FormControl>
+                    <Switch
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+            <Button type="submit" className="w-full">
+              Guardar Categoría
+            </Button>
+          </form>
+        </Form>
+      </section>
 
-      {/* Tabla de Categorías */}
-      <div>
+      {/* Tabla de categorías */}
+      <section>
         <h2 className="text-xl font-semibold mb-4">Categorías Existentes</h2>
         <div className="flex items-center py-4">
           <Input
@@ -174,11 +215,12 @@ export default function CategoriesPage({
             value={filter}
             onChange={(e) => {
               setFilter(e.target.value);
-              handlePageChange(1); // resetear a página 1 si hay filtro
+              handlePageChange(1);
             }}
             className="max-w-sm"
           />
         </div>
+
         <div className="rounded-md border">
           <Table>
             <TableHeader>
@@ -244,7 +286,9 @@ export default function CategoriesPage({
               ) : (
                 <TableRow>
                   <TableCell colSpan={4} className="text-center py-6">
-                    No hay categorías registradas.
+                    {filter
+                      ? "No hay resultados para el filtro aplicado"
+                      : "No hay categorías registradas"}
                   </TableCell>
                 </TableRow>
               )}
@@ -290,7 +334,7 @@ export default function CategoriesPage({
             </div>
           </div>
         )}
-      </div>
+      </section>
 
       {/* Diálogos */}
       <EditCategoryDialog

@@ -1,8 +1,7 @@
 "use client";
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { useEffect, useState } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Plus, Package, ChevronLeft, ChevronRight } from "lucide-react";
@@ -19,6 +18,7 @@ import { Product } from "@/types/types";
 import { ProductForm } from "@/components/dashboard/products/product-form";
 import { ProductDetails } from "@/components/dashboard/products/product-detailts";
 import { ProductDelete } from "@/components/dashboard/products/product-delete";
+import { usePagination } from "@/hooks/usePagination";
 
 type InitialValues = {
   products: Product[];
@@ -31,30 +31,14 @@ function ProductsPage({ products }: InitialValues) {
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
   const [action, setAction] = useState<"create" | "edit">("create");
 
-  const searchParams = useSearchParams();
-  const router = useRouter();
-
   const productsPerPage = 5;
 
-  const getPageFromUrl = () => {
-    const page = parseInt(searchParams.get("page") || "1", 10);
-    return isNaN(page) || page < 1 ? 1 : page;
-  };
+  const { currentPage, handlePageChange, calculatePagination } =
+    usePagination(productsPerPage);
 
-  const [currentPage, setCurrentPage] = useState(getPageFromUrl());
-
-  useEffect(() => {
-    const page = getPageFromUrl();
-    setCurrentPage(page);
-  }, [searchParams]);
-
-  const handlePageChange = (page: number) => {
-    router.push(`?page=${page}`);
-  };
-
-  const totalPages = Math.ceil(products.length / productsPerPage);
-  const indexOfLast = currentPage * productsPerPage;
-  const indexOfFirst = indexOfLast - productsPerPage;
+  const { totalPages, indexOfFirst, indexOfLast } = calculatePagination(
+    products.length
+  );
   const currentProducts = products.slice(indexOfFirst, indexOfLast);
 
   const handleViewProduct = (product: Product) => {

@@ -21,6 +21,7 @@ import { Input } from "@/components/ui/input";
 import Link from "next/link";
 import { useCart } from "@/store/cart-store";
 import { useEffect, useState } from "react";
+import Image from "next/image";
 
 function CartPage() {
   const {
@@ -100,13 +101,10 @@ function CartPage() {
                 >
                   <div className="flex flex-col sm:flex-row">
                     <div className="relative aspect-square w-full sm:w-40 md:w-48">
-                      <img
-                        src={
-                          item.product.imageUrl ||
-                          "/placeholder-product.jpghttps://w7.pngwing.com/pngs/460/176/png-transparent-camera-image-images-photo-picture-multimedia-ver-glyph-icon-thumbnail.png"
-                        }
+                      <Image
+                        src={item.product.imageUrl || ""}
                         alt={item.product.name}
-                        // fill
+                        fill
                         className="object-cover"
                         sizes="(max-width: 640px) 100vw, 200px"
                       />

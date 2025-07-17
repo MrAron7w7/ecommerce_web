@@ -24,7 +24,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Category, Product } from "@/types/types";
 import {
   Package,
   DollarSign,
@@ -44,6 +43,7 @@ import { useRouter } from "next/navigation";
 import { getCategories } from "@/actions/category/get-category";
 import { UpdateProduct } from "@/actions/product/update-product";
 import Image from "next/image";
+import { Category, Product } from "@prisma/client";
 
 interface ProductFormProps {
   product?: Product | null;
@@ -324,7 +324,7 @@ export function ProductForm({
                 <FormField
                   control={form.control}
                   name="image"
-                  render={({ field }) => (
+                  render={() => (
                     <FormItem>
                       <div className="space-y-4">
                         <div className="relative w-full h-64 rounded-xl border-2 border-dashed border-slate-300 overflow-hidden bg-gradient-to-br from-slate-50 to-slate-100 hover:border-purple-400 transition-all duration-300 group">

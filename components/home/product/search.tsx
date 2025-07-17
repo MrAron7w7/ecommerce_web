@@ -2,22 +2,26 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-
-import { Search } from "lucide-react";
+import { useState } from "react";
 import { useTransition } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Search } from "lucide-react";
 
 export function ProductSearch() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
+  const [searchTerm, setSearchTerm] = useState(
+    searchParams.get("search")?.toString() || ""
+  );
 
-  function handleSearch(term: string) {
+  function handleSearch() {
     const params = new URLSearchParams(searchParams);
-    if (term) {
-      params.set("search", term);
+    if (searchTerm) {
+      params.set("search", searchTerm);
     } else {
       params.delete("search");
     }
@@ -27,20 +31,34 @@ export function ProductSearch() {
     });
   }
 
+  // Opcional: Permitir búsqueda al presionar Enter
+  function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (e.key === "Enter") {
+      handleSearch();
+    }
+  }
+
   return (
-    <div className="relative w-full max-w-md">
-      <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-      <Input
-        type="search"
-        placeholder="Buscar productos..."
-        className="pl-9"
-        defaultValue={searchParams.get("search")?.toString()}
-        onChange={(e) => handleSearch(e.target.value)}
-        disabled={isPending}
-      />
-      {isPending && (
-        <span className="absolute right-3 top-1/2 -translate-y-1/2 inline-block h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-      )}
+    <div className="relative flex w-full max-w-md items-center gap-2">
+      <div className="relative flex-1">
+        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+        <Input
+          type="search"
+          placeholder="Buscar productos..."
+          className="pl-9"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          onKeyDown={handleKeyDown}
+          disabled={isPending}
+        />
+      </div>
+      <Button onClick={handleSearch} disabled={isPending || !searchTerm}>
+        {isPending ? (
+          <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+        ) : (
+          "Buscar"
+        )}
+      </Button>
     </div>
   );
 }

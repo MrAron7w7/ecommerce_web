@@ -15,7 +15,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useCart } from "@/store/cart-store";
 import { useEffect, useState } from "react";
-import { useFavorites } from "@/app/favorites/page";
+import { useFavorites } from "@/store/favorites-store";
 
 interface ProductCardProps {
   product: {

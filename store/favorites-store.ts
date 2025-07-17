@@ -1,4 +1,5 @@
 // src/store/favorites-store.ts
+import { useEffect, useState } from 'react';
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 
@@ -18,6 +19,7 @@ interface FavoritesState {
   removeFavorite: (productId: string) => void;
   isFavorite: (productId: string) => boolean;
   count: number;
+  hasHydrated: boolean; // Nuevo campo para controlar la hidratación
 }
 
 export const useFavoritesStore = create<FavoritesState>()(
@@ -25,25 +27,49 @@ export const useFavoritesStore = create<FavoritesState>()(
     (set, get) => ({
       favorites: [],
       count: 0,
-      addFavorite: (product) => set((state) => {
-        const exists = state.favorites.some(fav => fav.id === product.id);
-        if (!exists) {
-          return {
-            favorites: [...state.favorites, product],
-            count: state.count + 1
-          };
-        }
-        return state;
-      }),
-      removeFavorite: (productId) => set((state) => ({
-        favorites: state.favorites.filter(fav => fav.id !== productId),
-        count: state.favorites.filter(fav => fav.id !== productId).length
-      })),
-      isFavorite: (productId) => get().favorites.some(fav => fav.id === productId)
+      hasHydrated: false, // Inicialmente false
+      addFavorite: (product) =>
+        set((state) => {
+          const exists = state.favorites.some((fav) => fav.id === product.id);
+          if (!exists) {
+            return {
+              favorites: [...state.favorites, product],
+              count: state.count + 1,
+            };
+          }
+          return state;
+        }),
+      removeFavorite: (productId) =>
+        set((state) => ({
+          favorites: state.favorites.filter((fav) => fav.id !== productId),
+          count: state.favorites.filter((fav) => fav.id !== productId).length,
+        })),
+      isFavorite: (productId) =>
+        get().favorites.some((fav) => fav.id === productId),
     }),
     {
-      name: 'favorites-storage',
+      name: "favorites-storage",
       storage: createJSONStorage(() => localStorage),
+      onRehydrateStorage: () => (state) => {
+        if (state) {
+          state.hasHydrated = true; // Marcamos como hidratado
+        }
+      },
     }
   )
 );
+
+// Hook personalizado para esperar la hidratación
+export const useFavorites = () => {
+  const store = useFavoritesStore();
+  const [isHydrated, setIsHydrated] = useState(!store.hasHydrated);
+
+  useEffect(() => {
+    setIsHydrated(true);
+  }, []);
+
+  return {
+    ...store,
+    isHydrated,
+  };
+};

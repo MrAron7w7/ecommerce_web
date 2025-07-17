@@ -4,7 +4,6 @@ import { prisma } from "@/lib/prisma";
 import {
   getAllCategories,
   getFilteredProducts,
-  SortOption,
 } from "@/actions/product/product";
 import { Filters } from "@/components/home/product/filters";
 import { ProductSearch } from "@/components/home/product/search";
@@ -47,7 +46,7 @@ export default async function ProductsPage({
       ? parseInt(searchParams.maxPrice)
       : undefined,
     inStockOnly: searchParams.inStock === "true",
-    sortBy: searchParams.sortBy as SortOption,
+    sortBy: searchParams.sortBy as any,
     searchQuery: searchParams.search || "",
     page,
     limit,
