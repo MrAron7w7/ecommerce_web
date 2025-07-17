@@ -1,8 +1,8 @@
 "use client";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Menu, Heart, ShoppingCart, X } from "lucide-react";
-import { useState } from "react";
+import { Menu, Heart, ShoppingCart, X, User } from "lucide-react";
+import { useEffect, useState } from "react";
 import { Badge } from "../ui/badge";
 import { usePathname } from "next/navigation";
 import { Session } from "next-auth";
@@ -16,6 +16,8 @@ import {
   DropdownMenuTrigger,
 } from "../ui/dropdown-menu";
 import SignOutButton from "./signout-button";
+import { useFavorites } from "@/app/favorites/page";
+import { useCart } from "@/store/cart-store";
 
 interface NavLinkProps {
   session: Session | null;
@@ -26,6 +28,15 @@ function NavLink({ session }: NavLinkProps) {
   const path = usePathname();
   const isAuthenticated: boolean = !!session;
   const isAdmin = session?.user?.role === "ADMIN";
+  // const count = useFavoritesStore((state) => state.count);
+  // const [hydrated, setHydrated] = useState(false);
+  const { count, isHydrated } = useFavorites();
+  const [isClient, setIsClient] = useState(false);
+  const { count: cartCount, isHydrated: isCartHydrated } = useCart();
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   const isDashboardRoute = path?.startsWith("/dashboard");
 
@@ -72,6 +83,14 @@ function NavLink({ session }: NavLinkProps) {
             <Button variant="ghost" size="icon" className="relative" asChild>
               <Link href={"/favorites"}>
                 <Heart className="h-5 w-5" />
+                {isHydrated && isClient && count > 0 && (
+                  <Badge
+                    variant="secondary"
+                    className="absolute -right-1 -top-1 h-5 w-5 rounded-full p-0 flex items-center justify-center"
+                  >
+                    {count}
+                  </Badge>
+                )}
                 <span className="sr-only">Favoritos</span>
               </Link>
             </Button>
@@ -79,12 +98,14 @@ function NavLink({ session }: NavLinkProps) {
             <Button variant="ghost" size="icon" className="relative" asChild>
               <Link href={"/cart"}>
                 <ShoppingCart className="h-5 w-5" />
-                <Badge
-                  variant="secondary"
-                  className="absolute -right-1 -top-1 h-5 w-5 rounded-full p-0 flex items-center justify-center"
-                >
-                  3
-                </Badge>
+                {isCartHydrated && isClient && cartCount > 0 && (
+                  <Badge
+                    variant="secondary"
+                    className="absolute -right-1 -top-1 h-5 w-5 rounded-full p-0 flex items-center justify-center"
+                  >
+                    {cartCount}
+                  </Badge>
+                )}
                 <span className="sr-only">Carrito</span>
               </Link>
             </Button>
@@ -102,6 +123,12 @@ function NavLink({ session }: NavLinkProps) {
                   <DropdownMenuSeparator />
                   <DropdownMenuItem>
                     <SignOutButton />
+                  </DropdownMenuItem>
+                  <DropdownMenuItem>
+                    <Link className="flex gap-2" href={`/profile`}>
+                      <User />
+                      Perfil
+                    </Link>
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>

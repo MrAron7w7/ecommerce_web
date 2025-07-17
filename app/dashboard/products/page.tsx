@@ -83,10 +83,10 @@ function ProductsPage({ products }: InitialValues) {
             <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
               <div className="space-y-2">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-xl text-white">
+                  <div className="p-2 bg-[#0a0a0a] rounded-xl text-white">
                     <Package className="h-6 w-6" />
                   </div>
-                  <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+                  <h1 className="text-3xl font-bold text-[#0a0a0a]">
                     Gestión de Productos
                   </h1>
                 </div>
@@ -98,7 +98,7 @@ function ProductsPage({ products }: InitialValues) {
 
               <Button
                 size="lg"
-                className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+                className="shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
                 onClick={() => {
                   setAction("create");
                   setIsFormOpen(true);

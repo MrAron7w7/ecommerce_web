@@ -4,6 +4,7 @@ import "./globals.css";
 import { Toaster } from "sonner";
 import HeaderLayout from "@/components/home/header-layout";
 import FooterLayout from "@/components/home/footer-layout";
+import { AiAssistant } from "@/components/ai-assistant/ai-assistant";
 
 const roboto = Roboto({
   variable: "--font-roboto",
@@ -22,15 +23,12 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <head>
-        {/* Cambiar icono de la app */}
-        <link rel="icon" href={"./logo.jpg"} />
-      </head>
       <body className={` ${roboto.variable} antialiased`}>
         <HeaderLayout />
         <main>{children}</main>
         <Toaster />
         <FooterLayout />
+        <AiAssistant />
       </body>
     </html>
   );

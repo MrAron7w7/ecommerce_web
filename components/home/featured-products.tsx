@@ -1,15 +1,9 @@
 import { Button } from "../ui/button";
 import Link from "next/link";
-import { ChevronRight, Heart, ShoppingCart, Star } from "lucide-react";
-import {
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "../ui/card";
-import { Badge } from "../ui/badge";
+import { ChevronRight } from "lucide-react";
+
 import { getProducts } from "@/actions/product/get-product";
+import { ProductCard } from "./product/product-card";
 
 async function FeaturedProducts() {
   const featuredProducts = await getProducts();
@@ -65,58 +59,11 @@ async function FeaturedProducts() {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
         {featuredProducts.map((product) => (
-          <Card key={product.id} className="group overflow-hidden">
-            <div className="relative aspect-square overflow-hidden">
-              <img
-                src={
-                  product.imageUrl ||
-                  "https://images.unsplash.com/photo-1542291026-7eec264c27ff"
-                }
-                alt={product.name}
-                className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-300"
-              />
-              <div className="absolute top-2 right-2">
-                <Button
-                  variant="secondary"
-                  size="icon"
-                  className="rounded-full h-8 w-8"
-                >
-                  <Heart className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-            <CardHeader className="pb-2">
-              <Badge variant="outline" className="mb-2 w-fit">
-                {product.category.name}
-              </Badge>
-              <CardTitle className="text-lg">{product.name}</CardTitle>
-            </CardHeader>
-            <CardContent className="pb-4">
-              <div className="flex items-center gap-1 mb-2">
-                {[1, 2, 3, 4, 5].map((star) => (
-                  <Star
-                    key={star}
-                    className={`h-4 w-4 ${
-                      star <= 4
-                        ? "fill-yellow-400 text-yellow-400"
-                        : "text-gray-300"
-                    }`}
-                  />
-                ))}
-                <span className="text-sm text-gray-500 ml-1">(24)</span>
-              </div>
-              <p className="text-lg font-bold">${product.price.toFixed(2)}</p>
-            </CardContent>
-            <CardFooter className="flex flex-col gap-2">
-              <Button variant="outline" className="w-full">
-                Ver detalles
-              </Button>
-              <Button className=" w-full">
-                <ShoppingCart className="h-4 w-4 mr-2 " />
-                Añadir
-              </Button>
-            </CardFooter>
-          </Card>
+          <ProductCard
+            key={product.id}
+            product={product}
+            showDescription={true}
+          />
         ))}
       </div>
     </section>

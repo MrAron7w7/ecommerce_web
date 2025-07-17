@@ -4,7 +4,6 @@ import Link from "next/link";
 import { Package, Layers, Users, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { usePathname } from "next/navigation";
-import { cn } from "@/lib/utils";
 
 export function Sidebar() {
   const Links = [
@@ -61,22 +60,10 @@ export function Sidebar() {
               <div key={link.label} className="space-y-1">
                 <Link href={link.href}>
                   <Button
-                    variant={pathname === link.href ? "secondary" : "ghost"}
-                    className={cn(
-                      "w-full justify-start h-12 px-4",
-                      pathname === link.href
-                        ? "bg-blue-50 text-blue-600 hover:bg-blue-50"
-                        : "hover:bg-gray-100"
-                    )}
+                    variant={pathname === link.href ? "default" : "ghost"}
+                    className={"w-full justify-start h-12 px-4"}
                   >
-                    <link.icon
-                      className={cn(
-                        "w-5 h-5 mr-3",
-                        pathname === link.href
-                          ? "text-blue-600"
-                          : "text-gray-600"
-                      )}
-                    />
+                    <link.icon className={"w-5 h-5 mr-3"} />
                     <span className="text-base">{link.label}</span>
                   </Button>
                 </Link>

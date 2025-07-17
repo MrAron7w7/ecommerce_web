@@ -35,6 +35,10 @@ async function FeaturedCategories() {
   //     description: "Complementos para tu entrenamiento",
   //   },
   // ];
+
+  // Solo tomar las primeras 4 categorias
+  categories.length = 4;
+
   return (
     <section className="container py-12 px-4">
       <h2 className="text-2xl font-bold mb-8">Categorías destacadas</h2>

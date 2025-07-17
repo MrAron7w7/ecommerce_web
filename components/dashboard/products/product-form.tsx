@@ -43,6 +43,7 @@ import { SaveProduct } from "@/actions/product/save-product";
 import { useRouter } from "next/navigation";
 import { getCategories } from "@/actions/category/get-category";
 import { UpdateProduct } from "@/actions/product/update-product";
+import Image from "next/image";
 
 interface ProductFormProps {
   product?: Product | null;
@@ -329,9 +330,10 @@ export function ProductForm({
                         <div className="relative w-full h-64 rounded-xl border-2 border-dashed border-slate-300 overflow-hidden bg-gradient-to-br from-slate-50 to-slate-100 hover:border-purple-400 transition-all duration-300 group">
                           {previewImage ? (
                             <div className="relative w-full h-full">
-                              <img
+                              <Image
                                 src={previewImage}
                                 alt="Preview"
+                                fill
                                 className="object-cover w-full h-full rounded-xl"
                               />
                               <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">

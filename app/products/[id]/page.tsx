@@ -1,16 +1,11 @@
+// src/app/products/[id]/page.tsx
 import { findProduct } from "@/actions/product/find-product";
 import { getProducts } from "@/actions/product/get-product";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+
 import {
   Star,
   Heart,
@@ -20,22 +15,33 @@ import {
   ShieldCheck,
   Truck,
   CreditCard,
+  ShoppingCart,
 } from "lucide-react";
-
 import Link from "next/link";
+import { Badge } from "@/components/ui/badge";
+import Image from "next/image";
 
-async function ProductPage({ params }: { params: Promise<{ id: string }> }) {
-  const product = await findProduct((await params).id);
+interface ProductPageProps {
+  params: { id: string };
+}
+
+export default async function ProductPage({ params }: ProductPageProps) {
+  const product = await findProduct(params.id);
 
   if (!product) {
-    return <div>Producto no encontrado</div>;
+    return (
+      <div className="container mx-auto px-4 py-8 text-center">
+        <h1 className="text-2xl font-bold">Producto no encontrado</h1>
+        <Link href="/products" className="text-primary mt-4 inline-block">
+          Volver a la tienda
+        </Link>
+      </div>
+    );
   }
 
   const products = await getProducts();
-
-  // Filtra los productos relacionados excluyendo el producto actual
   const relatedProducts = products
-    .filter((p) => p.id !== product.id)
+    .filter((p) => p.id !== product.id && p.categoryId === product.categoryId)
     .slice(0, 4);
 
   return (
@@ -46,227 +52,214 @@ async function ProductPage({ params }: { params: Promise<{ id: string }> }) {
           Inicio
         </Link>
         <ChevronRight className="h-4 w-4 mx-2" />
+        <Link href="/products" className="hover:text-primary">
+          Productos
+        </Link>
+        <ChevronRight className="h-4 w-4 mx-2" />
         <span className="text-primary font-medium">{product.name}</span>
       </div>
-
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Galería de imágenes */}
-        <div>
-          <img
-            className="w-full"
-            src={`${product.imageUrl}`}
-            alt={product.name}
-          />
-          {/* <Carousel className="w-full">
-            <CarouselContent>
-              {productImages.map((img, index) => (
-                <CarouselItem key={index}>
-                  <Card className="overflow-hidden">
-                    <div className="aspect-square relative">
-                      <Image
-                        src={img}
-                        alt={product.name}
-                        fill
-                        className="object-cover"
-                        sizes="(max-width: 768px) 100vw, 50vw"
-                      />
-                    </div>
-                  </Card>
-                </CarouselItem>
-              ))}
-            </CarouselContent>
-            <CarouselPrevious className="left-4" />
-            <CarouselNext className="right-4" />
-          </Carousel> */}
-          {/* Miniaturas - versión simplificada
-          <div className="flex gap-2 mt-4">
-            {productImages.slice(0, 4).map((img, index) => (
-              <button
-                key={index}
-                className="w-16 h-16 relative border rounded-md overflow-hidden"
+        <div className="space-y-4">
+          <div className="relative aspect-square bg-gray-100 rounded-lg overflow-hidden">
+            {product.imageUrl ? (
+              <Image
+                src={product.imageUrl}
+                alt={product.name}
+                fill
+                className="object-cover"
+                priority
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center text-gray-400">
+                Sin imagen
+              </div>
+            )}
+            {product.stock === 0 && (
+              <Badge
+                variant="destructive"
+                className="absolute top-2 left-2 text-sm"
               >
-                <Image
-                  src={img}
-                  alt={`Miniatura ${index + 1}`}
-                  fill
-                  className="object-cover"
-                />
-              </button>
-            ))}
-          </div> */}
+                Agotado
+              </Badge>
+            )}
+          </div>
         </div>
 
         {/* Información del producto */}
-        <div>
+        <div className="space-y-6">
           <div className="flex justify-between items-start">
             <div>
-              <h1 className="text-3xl font-bold tracking-tight text-gray-900">
+              <h1 className="text-3xl font-bold tracking-tight">
                 {product.name}
               </h1>
-              <p className="text-lg text-gray-500 mt-2">
+              <Badge variant="outline" className="mt-2">
                 {product.category.name}
-              </p>
+              </Badge>
             </div>
             <Button variant="ghost" size="icon">
               <Heart className="h-5 w-5" />
             </Button>
           </div>
 
-          {/* Rating y reviews */}
-          <div className="mt-4 flex items-center">
+          {/* Precio */}
+          <div className="flex items-center gap-2">
+            <span className="text-2xl font-bold">
+              ${product.price.toFixed(2)}
+            </span>
+            {product.stock > 0 ? (
+              <Badge variant="secondary" className="text-sm">
+                {product.stock} en stock
+              </Badge>
+            ) : (
+              <Badge variant="destructive" className="text-sm">
+                Sin stock
+              </Badge>
+            )}
+          </div>
+
+          {/* Rating */}
+          <div className="flex items-center gap-2">
             <div className="flex items-center">
-              {[0, 1, 2, 3, 4].map((rating) => (
+              {[1, 2, 3, 4, 5].map((star) => (
                 <Star
-                  key={rating}
+                  key={star}
                   className={`h-5 w-5 ${
-                    rating < 4 ? "text-yellow-400" : "text-gray-300"
+                    star <= 4
+                      ? "fill-yellow-400 text-yellow-400"
+                      : "text-gray-300"
                   }`}
-                  fill={rating < 4 ? "currentColor" : "none"}
                 />
               ))}
             </div>
-            <span className="ml-2 text-sm text-gray-600">
-              4.2 (128 reviews)
-            </span>
-            <Button variant="link" className="ml-4 text-sm">
-              Ver todas las reviews
-            </Button>
+            <span className="text-sm text-gray-600">(4.2)</span>
           </div>
 
           {/* Descripción */}
-          <div className="mt-6">
-            <h2 className="text-lg font-medium text-gray-900">Descripción</h2>
-            <p className="text-gray-600 mt-2">{product.description}</p>
+          <div className="space-y-2">
+            <h2 className="text-lg font-medium">Descripción</h2>
+            <p className="text-gray-600">
+              {product.description || "No hay descripción disponible."}
+            </p>
           </div>
 
-          {/* Variantes (talla, color, etc.) */}
-          <div className="mt-6 space-y-4">
-            <div>
-              <Label htmlFor="color">Color</Label>
-              <Select>
-                <SelectTrigger id="color" className="mt-1">
-                  <SelectValue placeholder="Selecciona un color" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="black">Negro</SelectItem>
-                  <SelectItem value="white">Blanco</SelectItem>
-                  <SelectItem value="blue">Azul</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <Label htmlFor="size">Talla</Label>
-              <Select>
-                <SelectTrigger id="size" className="mt-1">
-                  <SelectValue placeholder="Selecciona una talla" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="s">S</SelectItem>
-                  <SelectItem value="m">M</SelectItem>
-                  <SelectItem value="l">L</SelectItem>
-                  <SelectItem value="xl">XL</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <Label htmlFor="quantity">Cantidad</Label>
-              <Input
-                id="quantity"
-                type="number"
-                min="1"
-                defaultValue="1"
-                className="mt-1 w-24"
-              />
-            </div>
+          {/* Cantidad */}
+          <div className="space-y-2">
+            <Label htmlFor="quantity">Cantidad</Label>
+            <Input
+              id="quantity"
+              type="number"
+              min="1"
+              max={product.stock}
+              defaultValue="1"
+              className="w-24"
+              disabled={product.stock === 0}
+            />
           </div>
 
           {/* Botones de acción */}
-          <div className="mt-8 flex gap-4">
-            <Button size="lg" className="flex-1">
+          <div className="flex gap-4 pt-4">
+            <Button size="lg" className="flex-1" disabled={product.stock === 0}>
+              <ShoppingCart className="h-5 w-5 mr-2" />
               Añadir al carrito
             </Button>
-            <Button size="lg" variant="outline" className="flex-1">
+            <Button
+              size="lg"
+              variant="outline"
+              className="flex-1"
+              disabled={product.stock === 0}
+            >
               Comprar ahora
             </Button>
           </div>
 
-          {/* Envío y garantía */}
-          <div className="mt-8 grid grid-cols-2 gap-4">
-            <div className="flex items-center gap-2">
-              <Truck className="h-5 w-5 text-gray-500" />
+          {/* Info adicional */}
+          <div className="grid grid-cols-2 gap-4 pt-6 border-t">
+            <div className="flex items-center gap-3">
+              <Truck className="h-6 w-6 text-primary" />
               <div>
-                <p className="text-sm font-medium">Envío gratis</p>
-                <p className="text-xs text-gray-500">En 2-3 días</p>
+                <p className="font-medium">Envío rápido</p>
+                <p className="text-sm text-gray-600">Entrega en 2-3 días</p>
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              <Package className="h-5 w-5 text-gray-500" />
+            <div className="flex items-center gap-3">
+              <Package className="h-6 w-6 text-primary" />
               <div>
-                <p className="text-sm font-medium">Devolución gratis</p>
-                <p className="text-xs text-gray-500">30 días</p>
+                <p className="font-medium">Devoluciones</p>
+                <p className="text-sm text-gray-600">30 días garantía</p>
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              <ShieldCheck className="h-5 w-5 text-gray-500" />
+            <div className="flex items-center gap-3">
+              <ShieldCheck className="h-6 w-6 text-primary" />
               <div>
-                <p className="text-sm font-medium">Garantía</p>
-                <p className="text-xs text-gray-500">2 años</p>
+                <p className="font-medium">Garantía</p>
+                <p className="text-sm text-gray-600">2 años</p>
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              <CreditCard className="h-5 w-5 text-gray-500" />
+            <div className="flex items-center gap-3">
+              <CreditCard className="h-6 w-6 text-primary" />
               <div>
-                <p className="text-sm font-medium">Pago seguro</p>
-                <p className="text-xs text-gray-500">Protegido</p>
+                <p className="font-medium">Pago seguro</p>
+                <p className="text-sm text-gray-600">Protegido</p>
               </div>
             </div>
           </div>
 
           {/* Compartir */}
-          <div className="mt-8">
+          <div className="pt-6 border-t">
             <Button variant="outline">
               <Share2 className="h-4 w-4 mr-2" />
-              Compartir
+              Compartir producto
             </Button>
           </div>
         </div>
       </div>
-
       {/* Productos relacionados */}
-      <section className="mt-16">
-        <h2 className="text-2xl font-bold">Productos relacionados</h2>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
-          {relatedProducts.map((relatedProduct) => (
-            <Card
-              key={relatedProduct.id}
-              className="hover:shadow-lg transition-shadow"
-            >
-              <CardHeader className="p-0">
-                <div className="aspect-square relative">
-                  <img
-                    src={relatedProduct.imageUrl || ""}
-                    alt={relatedProduct.name}
-                    className="object-cover rounded-t-lg w-full h-full"
-                  />
-                </div>
-              </CardHeader>
-              <CardContent className="p-4">
-                <h3 className="font-medium">{relatedProduct.name}</h3>
-                <p className="text-primary font-bold mt-2">
-                  ${relatedProduct.price}
-                </p>
-                <Button size="sm" className="w-full mt-4">
-                  Añadir al carrito
-                </Button>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </section>
+      {relatedProducts.length > 0 && (
+        <section className="mt-16">
+          <h2 className="text-2xl font-bold mb-6">Productos relacionados</h2>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {relatedProducts.map((relatedProduct) => (
+              <Card
+                key={relatedProduct.id}
+                className="hover:shadow-lg transition-shadow overflow-hidden"
+              >
+                <Link href={`/products/${relatedProduct.id}`}>
+                  <CardHeader className="p-0">
+                    <div className="aspect-square relative bg-gray-100">
+                      {relatedProduct.imageUrl ? (
+                        <Image
+                          src={relatedProduct.imageUrl}
+                          alt={relatedProduct.name}
+                          fill
+                          className="object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-gray-400">
+                          Sin imagen
+                        </div>
+                      )}
+                    </div>
+                  </CardHeader>
+                  <CardContent className="p-4">
+                    <CardTitle className="text-lg">
+                      {relatedProduct.name}
+                    </CardTitle>
+                    <p className="text-primary font-bold mt-2">
+                      ${relatedProduct.price.toFixed(2)}
+                    </p>
+                    <Button size="sm" className="w-full mt-4" asChild>
+                      <Link href={`/products/${relatedProduct.id}`}>
+                        Ver detalles
+                      </Link>
+                    </Button>
+                  </CardContent>
+                </Link>
+              </Card>
+            ))}
+          </div>
+        </section>
+      )}
     </div>
   );
 }
-
-export default ProductPage;

@@ -19,58 +19,42 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Input } from "@/components/ui/input";
 import Link from "next/link";
+import { useCart } from "@/store/cart-store";
+import { useEffect, useState } from "react";
 
 function CartPage() {
-  // Datos de ejemplo basados en tu schema Prisma
-  const cartItems = [
-    {
-      id: "1",
-      product: {
-        id: "prod1",
-        name: "Zapatillas Deportivas Pro",
-        price: 89.99,
-        imageUrl: "https://images.unsplash.com/photo-1542291026-7eec264c27ff",
-        stock: 10,
-      },
-      quantity: 2,
-      price: 89.99,
-    },
-    {
-      id: "2",
-      product: {
-        id: "prod2",
-        name: "Camiseta Premium Algodón",
-        price: 29.99,
-        imageUrl: "https://images.unsplash.com/photo-1542291026-7eec264c27ff",
-        stock: 15,
-      },
-      quantity: 1,
-      price: 29.99,
-    },
-  ];
+  const {
+    items: cartItems,
+    removeItem,
+    updateQuantity,
+    clearCart,
+    subtotal,
+    isHydrated,
+  } = useCart();
+  const [isClient, setIsClient] = useState(false);
 
-  const subtotal = cartItems.reduce(
-    (sum, item) => sum + item.price * item.quantity,
-    0
-  );
-  const shipping = subtotal > 100 ? 0 : 5.99; // Envío gratis para compras > $100
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
+  const shipping = subtotal > 100 ? 0 : 5.99;
   const total = subtotal + shipping;
 
-  // Funciones para manejar cambios
-  const handleQuantityChange = (id: string, newQuantity: number) => {
-    // Aquí implementarías la lógica para actualizar la cantidad
-    console.log(`Cambiar cantidad del item ${id} a ${newQuantity}`);
-  };
-
-  const removeItem = (id: string) => {
-    // Lógica para eliminar item
-    console.log(`Eliminar item ${id}`);
-  };
-
-  const clearCart = () => {
-    // Lógica para vaciar carrito
-    console.log("Vaciar carrito");
-  };
+  if (!isHydrated || !isClient) {
+    return (
+      <div className="container mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+        <div className="animate-pulse space-y-4">
+          {/* Placeholder para el carrito */}
+          <div className="h-10 w-1/3 bg-gray-200 rounded"></div>
+          <div className="space-y-4">
+            {[1, 2].map((i) => (
+              <div key={i} className="h-32 bg-gray-200 rounded"></div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
@@ -88,7 +72,7 @@ function CartPage() {
         <div className="flex-1">
           <div className="flex items-center justify-between">
             <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">
-              Tu Carrito{" "}
+              Tu Carrito
               <span className="text-muted-foreground">
                 ({cartItems.length})
               </span>
@@ -117,7 +101,10 @@ function CartPage() {
                   <div className="flex flex-col sm:flex-row">
                     <div className="relative aspect-square w-full sm:w-40 md:w-48">
                       <img
-                        src={item.product.imageUrl}
+                        src={
+                          item.product.imageUrl ||
+                          "/placeholder-product.jpghttps://w7.pngwing.com/pngs/460/176/png-transparent-camera-image-images-photo-picture-multimedia-ver-glyph-icon-thumbnail.png"
+                        }
                         alt={item.product.name}
                         // fill
                         className="object-cover"
@@ -165,7 +152,7 @@ function CartPage() {
                             className="h-8 w-8"
                             disabled={item.quantity <= 1}
                             onClick={() =>
-                              handleQuantityChange(item.id, item.quantity - 1)
+                              updateQuantity(item.id, item.quantity - 1)
                             }
                           >
                             <Minus className="h-4 w-4" />
@@ -179,7 +166,7 @@ function CartPage() {
                             className="h-8 w-8"
                             disabled={item.quantity >= item.product.stock}
                             onClick={() =>
-                              handleQuantityChange(item.id, item.quantity + 1)
+                              updateQuantity(item.id, item.quantity + 1)
                             }
                           >
                             <Plus className="h-4 w-4" />

@@ -41,6 +41,7 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Product } from "@/types/types";
+import Image from "next/image";
 
 interface ProductsTableProps {
   products: Product[];
@@ -56,9 +57,10 @@ export const columns: ColumnDef<Product>[] = [
     cell: ({ row }) => (
       <div className="w-16 h-16 relative rounded-md overflow-hidden border">
         {row.original.imageUrl ? (
-          <img
+          <Image
             src={row.original.imageUrl}
             alt={row.original.name}
+            fill
             className="object-cover w-full h-full"
           />
         ) : (
